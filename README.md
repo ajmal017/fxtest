@@ -10,7 +10,7 @@ Jiji is a forex algorithmic trading framework using [OANDA REST API](http://deve
 
 [lean more...](http://jiji2.unageanu.net/) (sorry, this page is japanese only.)
 
-# License
+# License 
 
 ---
 Copyright (c) unageanu <masaya.yamauchi>
