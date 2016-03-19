@@ -1,5 +1,6 @@
 
 require 'jiji/model/agents/agent'
+require 'jiji/model/training/value_nn'
 
 # ===移動平均を使うエージェントのサンプル
 # 添付ライブラリ Signals::MovingAverage を利用して移動平均を算出し、
