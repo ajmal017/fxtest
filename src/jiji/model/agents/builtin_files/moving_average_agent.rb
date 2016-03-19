@@ -15,6 +15,7 @@ class MovingAverageAgent
 移動平均を使うエージェントです。
  -ゴールデンクロスで買い&売り建て玉をコミット。
  -デッドクロスで売り&買い建て玉をコミット。
+ -人工知能使ってみよう
       STR
   end
 
@@ -38,6 +39,7 @@ class MovingAverageAgent
     # 移動平均グラフ
     @graph = graph_factory.create('移動平均線',
       :rate, :average, ['#779999', '#557777'])
+    @nn = ValueNN.new  
   end
 
   # 次のレートを受け取る
