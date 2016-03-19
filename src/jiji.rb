@@ -30,6 +30,7 @@ module Jiji
       module Utils            end
       module TradingSummaries end
     end
+    module Training    end
   end
 
   module Security end

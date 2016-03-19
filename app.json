@@ -6,7 +6,7 @@
     "System Trade"
   ],
   "website": "https://jiji2.unageanu.com/",
-  "repository": "https://github.com/unageanu/jiji2",
+  "repository": "https://github.com/maxcus/fxtest",
   "logo": "http://jiji2.unageanu.net/images/logo_200x200.png",
   "success_url": "/",
   "scripts": { },
