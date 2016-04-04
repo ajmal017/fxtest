@@ -32,6 +32,16 @@ class NeuralNetAgent
       Signals::MovingAverage.new(@long.to_i)
     ]
 
+    # ボリンジャーバンドの取得
+    @bol = Signals::BollingerBands.new(@short.to_i, [3])
+
+    # ROCの取得
+    @roc = Signals::ROC.new(14)
+
+    #傾きを取得
+    @mom = Signals::Momentum.new(25)
+    @vec = Signals::Vector.new(25)
+
     # 移動平均グラフ
     @graph = graph_factory.create('移動平均線',
       :rate, :average, ['#779999', '#557777'])
@@ -39,15 +49,12 @@ class NeuralNetAgent
     # AIの器を作成する、もし学習結果がすでにあればそれを読み込む
     @nn = NeuralNet.load("#{Jiji::Utils::Requires.root}#{@neural}")
 
-    x_data = [0.01516,0.045395,-0.001,0.030235]
-    output = @nn.run x_data
-    logger.debug "output: #{output}"
-
     @next_time = nil
 
     @bid_back = 0
 
     @input_data = nil
+    @input_data_back = nil
 
   end
 
@@ -72,22 +79,48 @@ class NeuralNetAgent
     res = @mvs.map { |mv| mv.next_data(tick[:USDJPY].bid) }
     return if !res[0] || !res[1]
 
+    res25 = res[0]
+    res200 = res[1]
+
+    # ボリンジャーバンドを計算
+    resbol = @bol.next_data(tick[:USDJPY].bid)
+
+    resmom = @mom.next_data(tick[:USDJPY].bid)
+    resvec = @vec.next_data(tick[:USDJPY].bid)
+    resrsi = @roc.next_data(tick[:USDJPY].bid)
+
     # グラフに出力
     @graph << res
 
-    p1 = res[0] - tick[:USDJPY].bid
-    p2 = res[1] - tick[:USDJPY].bid
-    p3 = tick[:USDJPY].bid - @bid_back
-    p4 = res[1] - res[0]
+    if !resbol.nil? && !res200.nil?
 
-    p1 = p1.round(3)
-    p2 = p2.round(3)
-    p3 = p3.round(5)
-    p4 = p4.round(5)
+      #ボラティリティ 上下3σの差
+      p1 = resbol[0] - resbol[1]
+      #モメンタム
+      p2 = resmom
+      #ベクター
+      p3 = resvec
+      #RSI
+      p4 = resrsi
+      #mov25とbidの差
+      p5 = tick[:USDJPY].bid - res25
+      #mov200とbidの差
+      p6 = tick[:USDJPY].bid - res200
 
-    @input_data = [p1,p2,p3,p4]
 
-    do_trade(tick)
+      p1 = p1.round(3)
+      p2 = p2.round(3)
+      p3 = p3.round(3)
+      p4 = p4.round(3)
+      p5 = p5.round(3)
+      p6 = p6.round(3)
+
+      @input_data = [p1,p2,p3,p4,p5,p6]
+
+      if p1 != 0
+        do_trade(tick)
+      end
+    end
   end
 
   def do_trade(tick)
@@ -105,15 +138,35 @@ class NeuralNetAgent
         # 人工知能で取引方向を計算
         output = @nn.run @input_data
 
-#        logger.debug "output: #{output}"
+        if @bid_back < tick[:USDJPY].bid
+          p7 = 1
+        else
+          p7 = 0
+        end
 
-        if output[0].to_f > 0.8
+        if !@input_data_back.nil?
+          logger.debug "#{@input_data_back[0]},#{@input_data_back[1]},#{@input_data_back[2]},#{@input_data_back[3]},#{@input_data_back[4]},#{@input_data_back[5]},#{@input_data_back[6]},#{p7}"
+        end
+
+#        logger.debug "#{@input_data}"
+#        logger.debug "#{output}"
+
+
+
+        if output[0].to_f > 0.9
           broker.buy(:USDJPY, 1000)
-        elsif output[1].to_f > 0.8
+#          logger.debug "buy: #{output}"
+#          logger.debug "#{@input_data}"
+        end
+
+        if output[1].to_f > 0.9
           broker.sell(:USDJPY, 1000)
+#          logger.debug "sell: #{output}"
+#          logger.debug "#{@input_data}"
         end
 
         @bid_back = tick[:USDJPY].bid
+        @input_data_back = @input_data
 
       end
     end
